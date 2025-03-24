@@ -86,12 +86,6 @@ def backtrack_global_alignment(s1, s2, arrow_matrix):
 
     return coordinates
 
-def validate_alpha_input(input):
-    """
-    Validate that the input is an alphabetical string.
-    """
-    return input.isalpha()
-
 def parse_input(input1, input2):
     """
     Parse the input strings by removing spaces and converting
