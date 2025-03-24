@@ -50,7 +50,6 @@ def value_to_arrows(top_val, left_val, diag_val):
     
     return np.array(arrows)
 
-
 def initialize_value_matrix(s1, s2, gap_penalty):
     """
     Initialize the matrix with the correct dimensions and values.
@@ -91,7 +90,6 @@ def validate_alpha_input(input):
     """
     Validate that the input is an alphabetical string.
     """
-    # TODO use this with exception in controller?
     return input.isalpha()
 
 def parse_input(input1, input2):
@@ -103,10 +101,3 @@ def parse_input(input1, input2):
     input2 = input2.upper().replace(" ", "")
 
     return input1, input2
-
-# input1 = "tacag"
-# input2 = "tatcag"
-# a = needleman_wunsch(input1, input2)
-# print(a[0])
-# print(a[1])
-# print(backtrack_global_alignment(input1, input2, a[1]))
