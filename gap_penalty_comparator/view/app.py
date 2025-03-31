@@ -1,14 +1,14 @@
 import matplotlib.pyplot as plt
-from .components.button import Button
-from .components.label import Label
-from .components.text_area import TextArea
-from .components.text_field import TextField
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import (QFrame, QScrollArea, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
+
+from .components.button import Button
+from .components.label import Label
+from .components.text_area import TextArea
+from .components.text_field import TextField
 
 
 class MainWindow(QScrollArea):
@@ -71,22 +71,21 @@ class MainWindow(QScrollArea):
         input_layout.addWidget(submit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.matrices_frame = QFrame()
-        self.matrices_frame.setStyleSheet("background-color: blue;") 
-        matrices_layout = QVBoxLayout()
-        self.matrices_frame.setLayout(matrices_layout)
-        matrices_layout.setContentsMargins(20, 0, 20, 0)
-        matrices_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.matrices_layout = QVBoxLayout()
+        self.matrices_frame.setLayout(self.matrices_layout)
+        self.matrices_layout.setContentsMargins(20, 0, 20, 0)
+        self.matrices_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.matrices_frame.setVisible(False)
 
         edit_alignment_btn = Button(250, 50, "Edit alignments/penalties", self, font_size=12)
         edit_alignment_btn.clicked.connect(self.show_main_view)
-        matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Matplotlib matrix canvas
         self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvas(self.figure)
         self.canvas.setStyleSheet("background-color: red;")
-        matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.main_layout.addWidget(self.input_frame, stretch=1)  # Stretch keeps title from moving between views
         self.main_layout.addWidget(self.matrices_frame, stretch=1) # Stretch keeps title from moving between views
@@ -99,16 +98,22 @@ class MainWindow(QScrollArea):
             value_matrices (list(np.array)): list of alignment matrices with scores
             arrow_matrices (list(np.array)): list of matrices with values representing arrows for backtracking.
             sequences (tuple): tuple containing the two sequences being aligned
+            alignment_coordinates (list(list(int))): nested list of coordinates for positions of the alignment cells
         """
         self.toggle_matrices_view(True)
 
         num_matrices = len(value_matrices)
         fig_height = max(5, 3 * num_matrices)
 
-        self.figure.clear()
-        fig, axes = plt.subplots(nrows=num_matrices, figsize=(5, fig_height))
-        self.figure = fig
-        self.canvas.figure = self.figure
+        # Keep canvas from shrinking when switching views by deleting it before creating a new one
+        if hasattr(self, 'canvas') and self.canvas is not None:
+            self.matrices_layout = self.matrices_frame.layout()
+            self.matrices_layout.removeWidget(self.canvas)
+            self.canvas.deleteLater()
+            self.canvas = None
+
+        self.figure, axes = plt.subplots(nrows=num_matrices, figsize=(5, fig_height))
+        self.canvas = FigureCanvas(self.figure)
 
         if num_matrices == 1:
             axes = [axes]
@@ -120,14 +125,6 @@ class MainWindow(QScrollArea):
             len1, len2 = len(seq1), len(seq2)
 
             display_matrix = self.add_sequence_labels(val_matrix, seq1, seq2)
-
-            # Add sequence labels
-            # display_matrix = [[''] + [''] + list(seq2)]  # Display sequence 2 in the first row
-            # for row_idx, row in enumerate(matrix):
-            #     seq1_char = ''
-            #     if row_idx > 0 and row_idx <= len1 + 1:
-            #         seq1_char = seq1[row_idx - 2]
-            #     display_matrix.append([seq1_char] + row.tolist()) # Add sequence 1 in the first column
             
             # Add arrows to matrix
             # for r in range(len1):
@@ -150,7 +147,10 @@ class MainWindow(QScrollArea):
             ax.set_title(f"Generated Matrix {i + 1}", fontsize=16) # TODO add penalty title
 
         self.figure.tight_layout()
+
+        # Add the new canvas to the layout
         self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
+        self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
 
     def add_sequence_labels(self, value_matrix, seq1, seq2):
@@ -178,7 +178,7 @@ class MainWindow(QScrollArea):
                     if row == 1 and col == 1: # Start position for alignment
                         cell.set_facecolor('#0ceb6f')
 
-                    elif (row - 1, col - 1) in alignment_coordinates: # Alignment cells
+                    elif (row - 1, col - 1) in alignment_coordinates:
                         cell.set_facecolor('#85e6b0') 
 
     def show_main_view(self):

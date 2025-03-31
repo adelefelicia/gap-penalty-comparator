@@ -1,6 +1,5 @@
-import sys
 import os
-
+import sys
 
 from controller.controller import Controller
 

@@ -1,7 +1,9 @@
 import sys
+
+from model.comparator import backtrack_global_alignment, needleman_wunsch
 from PyQt6.QtWidgets import QApplication, QPushButton
 from view.app import MainWindow
-from model.comparator import needleman_wunsch, backtrack_global_alignment
+
 
 class Controller:
     def __init__(self):
