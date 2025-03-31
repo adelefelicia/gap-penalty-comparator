@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def needleman_wunsch(s1, s2, gap_penalty=-2):
     """
     Implement the Needleman-Wunsch algorithm for global alignment.
@@ -58,8 +59,9 @@ def initialize_value_matrix(s1, s2, gap_penalty):
     """
     matrix = np.zeros((len(s1) + 1, len(s2) + 1))
 
-    matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
-    matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
+    if gap_penalty != 0:
+        matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
+        matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
 
     return matrix
 
