@@ -81,12 +81,6 @@ class MainWindow(QScrollArea):
         edit_alignment_btn.clicked.connect(self.show_main_view)
         self.matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Matplotlib matrix canvas
-        self.figure, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self.figure)
-        self.canvas.setStyleSheet("background-color: red;")
-        self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
-
         self.main_layout.addWidget(self.input_frame, stretch=1)  # Stretch keeps title from moving between views
         self.main_layout.addWidget(self.matrices_frame, stretch=1) # Stretch keeps title from moving between views
     
@@ -148,7 +142,6 @@ class MainWindow(QScrollArea):
 
         self.figure.tight_layout()
 
-        # Add the new canvas to the layout
         self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
         self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
@@ -156,30 +149,25 @@ class MainWindow(QScrollArea):
     def add_sequence_labels(self, value_matrix, seq1, seq2):
         """ Adds the characters of the sequences to the display matrix' first row and column.
             Leaves the first two elements in the first row and column blank."""
-        display_matrix = [[''] + [''] + list(seq2)]  # Display sequence 2 in the first row
+        display_matrix = [[''] + [''] + list(seq2)]
         for row_idx, row in enumerate(value_matrix):
             seq1_char = ''
             if row_idx > 0 and row_idx <= len(seq1) + 1:
                 seq1_char = seq1[row_idx - 2]
-            display_matrix.append([seq1_char] + row.tolist()) # Add sequence 1 in the first column
+            display_matrix.append([seq1_char] + row.tolist())
         
         return display_matrix
 
     def format_matrix_cells(self, table, alignment_coordinates):
         for key, cell in table.get_celld().items():
                 row, col = key
-                if row == 0 or col == 0:  # Sequence headers
-                    cell.set_text_props(fontsize=20) # TODO make bigger, no effect rn
+                if row == 0 or col == 0:
                     cell.set_text_props(weight='bold')
                     cell.set_facecolor('#cccccc')
-                else:
-                    cell.set_fontsize(14)
-
-                    if row == 1 and col == 1: # Start position for alignment
+                elif row == 1 and col == 1:
                         cell.set_facecolor('#0ceb6f')
-
-                    elif (row - 1, col - 1) in alignment_coordinates:
-                        cell.set_facecolor('#85e6b0') 
+                elif (row - 1, col - 1) in alignment_coordinates:
+                    cell.set_facecolor('#85e6b0') 
 
     def show_main_view(self):
         self.toggle_matrices_view(False)
