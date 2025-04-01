@@ -4,7 +4,7 @@ from matplotlib.backends.backend_qt5agg import \
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
 from PyQt6.QtWidgets import (QFrame, QMessageBox, QScrollArea, QVBoxLayout,
-                             QWidget)
+                             QWidget, QApplication)
 
 from .components.button import Button
 from .components.label import Label
@@ -16,10 +16,9 @@ class MainWindow(QScrollArea):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.showMaximized()
     
     def init_ui(self):
-        self.resize(1000, 1000)
-
         # Main container widget (required to make window scrollable)
         self.main_widget = QWidget()
         self.main_layout = QVBoxLayout(self.main_widget)
@@ -125,12 +124,28 @@ class MainWindow(QScrollArea):
             self.format_matrix_cells(table, coordinates)
                     
             ax.axis('off')
-            # ax.set_aspect('equal') # TODO decide if it should be always square or always rectangular
             ax.set_title(f"Gap penalty = {gap_penalties[i]}", fontsize=16) # TODO add penalty title
 
         self.figure.tight_layout()
 
-        self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
+        max_seq_length = max(len(sequences[0]), len(sequences[1]))
+
+        # Quadratic scaling function for the canvas size
+        calculated_width = int(self.figure.get_size_inches()[0] * (50 + 0.5 * max_seq_length ** 2))
+        calculated_height = int(fig_height * (50 + 0.5 * max_seq_length ** 2))
+
+        min_width = int(self.figure.get_size_inches()[0] * 150)
+        min_height = int(fig_height * 150)
+
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        max_width = screen_geometry.width()
+        max_height = screen_geometry.height()
+
+        # Clamp the width and height to the specified interval
+        width = max(min_width, min(calculated_width, max_width))
+        height = max(min_height, min(calculated_height, max_height))
+
+        self.canvas.setFixedSize(width, height)
         self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
     
@@ -164,6 +179,12 @@ class MainWindow(QScrollArea):
         return display_matrix
 
     def format_matrix_cells(self, table, alignment_coordinates):
+        max_font_size = 16 
+        min_font_size = 8
+
+        # Dynamically calculate font size (inverse proportionality)
+        font_size = max(min_font_size, min(max_font_size, int(100 / (len(alignment_coordinates) + 1))))
+
         for key, cell in table.get_celld().items():
                 row, col = key
                 if row == 0 or col == 0:
@@ -173,6 +194,7 @@ class MainWindow(QScrollArea):
                         cell.set_facecolor('#0ceb6f')
                 elif (row - 1, col - 1) in alignment_coordinates:
                     cell.set_facecolor('#85e6b0')
+                cell.set_text_props(fontsize=font_size)
 
     def show_main_view(self):
         self.toggle_matrices_view(False)
