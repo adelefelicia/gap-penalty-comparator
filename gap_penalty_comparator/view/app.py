@@ -243,7 +243,7 @@ class MainWindow(QScrollArea):
             QApplication.restoreOverrideCursor()
     
     def get_sequences(self):
-        return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()
+        return self.input_seq1.text(), self.input_seq2.text()
 
     def get_gap_penalties(self):
         penalties = [self.gap_penalty1.text(), self.gap_penalty2.text(), self.gap_penalty3.text()]
