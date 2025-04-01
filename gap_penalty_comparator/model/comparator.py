@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def needleman_wunsch(s1, s2, gap_penalty=-2):
     """
     Implement the Needleman-Wunsch algorithm for global alignment.
@@ -17,7 +18,6 @@ def needleman_wunsch(s1, s2, gap_penalty=-2):
     """
     match_score = 1
     mismatch_score = -1
-    s1, s2 = parse_input(s1, s2)
 
     value_matrix = initialize_value_matrix(s1, s2, gap_penalty)
     arrow_matrix = np.zeros(value_matrix.shape, dtype=object)
@@ -58,8 +58,9 @@ def initialize_value_matrix(s1, s2, gap_penalty):
     """
     matrix = np.zeros((len(s1) + 1, len(s2) + 1))
 
-    matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
-    matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
+    if gap_penalty != 0:
+        matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
+        matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
 
     return matrix
 
@@ -85,13 +86,3 @@ def backtrack_global_alignment(s1, s2, arrow_matrix):
         coordinates.append((row_idx, col_idx))
 
     return coordinates
-
-def parse_input(input1, input2):
-    """
-    Parse the input strings by removing spaces and converting
-    them to uppercase.
-    """
-    input1 = input1.upper().replace(" ", "")
-    input2 = input2.upper().replace(" ", "")
-
-    return input1, input2

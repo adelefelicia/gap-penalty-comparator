@@ -1,17 +1,15 @@
-import sys
-
 import matplotlib.pyplot as plt
-import numpy as np
-from components.button import Button
-from components.label import Label
-from components.text_area import TextArea
-from components.text_field import TextField
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import (QApplication, QFrame, QScrollArea, QVBoxLayout,
+from PyQt6.QtWidgets import (QFrame, QMessageBox, QScrollArea, QVBoxLayout,
                              QWidget)
+
+from .components.button import Button
+from .components.label import Label
+from .components.text_area import TextArea
+from .components.text_field import TextField
 
 
 class MainWindow(QScrollArea):
@@ -27,6 +25,8 @@ class MainWindow(QScrollArea):
         self.main_layout = QVBoxLayout(self.main_widget)
         self.setWidget(self.main_widget)
         self.setWidgetResizable(True)
+        self.setWindowTitle("Gap Penalty Comparator")
+        self.setStyleSheet("background-color: white")
         
         title = Label("Gap Penalty Comparator", self, font_size=20, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("padding: 20px;")
@@ -68,60 +68,145 @@ class MainWindow(QScrollArea):
         self.gap_penalty_layout.addWidget(self.gap_penalty3)
 
         submit_btn = Button(350, 70, "Calculate alignment matrix", self)
-        submit_btn.clicked.connect(self.generate_matrix)
+        submit_btn.setObjectName("submitBtn")
         input_layout.addWidget(submit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.matrices_frame = QFrame()
-        matrices_layout = QVBoxLayout()
-        self.matrices_frame.setLayout(matrices_layout)
-        matrices_layout.setContentsMargins(20, 0, 20, 0)
-        matrices_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.matrices_layout = QVBoxLayout()
+        self.matrices_frame.setLayout(self.matrices_layout)
+        self.matrices_layout.setContentsMargins(20, 0, 20, 0)
+        self.matrices_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.matrices_frame.setVisible(False)
-        
-        # Matplotlib matrix canvas
-        self.figure, self.ax = plt.subplots(figsize=(5, 5))
-        self.canvas = FigureCanvas(self.figure)
-        self.canvas.setMinimumSize(500, 500)
-        matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        edit_alignment_btn = Button(350, 70, "Edit alignments/penalties", self)
+        edit_alignment_btn = Button(250, 50, "Edit alignments/penalties", self, font_size=12)
         edit_alignment_btn.clicked.connect(self.show_main_view)
-        matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.main_layout.addWidget(self.input_frame, stretch=1)  # Stretch keeps title from moving between views
         self.main_layout.addWidget(self.matrices_frame, stretch=1) # Stretch keeps title from moving between views
+    
+    def display_matrices(self, value_matrices, arrow_matrices, sequences, alignment_coordinates, gap_penalties):
+        """
+        Displays the generated alignment matrices with labels and arrows.
 
-    def generate_matrix(self):
-        # Placeholder for matrix
-        max_length = max(len(self.input_seq1.toPlainText()), len(self.input_seq2.toPlainText()))
-        matrix_size = max_length if max_length > 0 else 5
-        matrix = np.random.randint(1, 100, (matrix_size, matrix_size))
+        Args:
+            value_matrices (list(np.array)): list of alignment matrices with scores
+            arrow_matrices (list(np.array)): list of matrices with values representing arrows for backtracking.
+            sequences (tuple): tuple containing the two sequences being aligned
+            alignment_coordinates (list(list(int))): nested list of coordinates for positions of the alignment cells
+        """
+        self.toggle_matrices_view(True)
 
-        # Hide input view
-        self.helper_text.setVisible(False)
-        self.input_frame.setVisible(False)
+        num_matrices = len(value_matrices)
+        fig_height = max(5, 3 * num_matrices)
 
-        # Show matrices view
-        self.matrices_frame.setVisible(True)
-        self.ax.clear()
-        self.ax.table(cellText=matrix, loc='center', cellLoc='center', bbox=[0, 0, 1, 1])
-        self.ax.axis('off')
-        self.ax.set_title("Generated Matrix", fontsize=16)
+        # Keep canvas from shrinking when switching views by deleting it before creating a new one
+        if hasattr(self, 'canvas') and self.canvas is not None:
+            self.matrices_layout = self.matrices_frame.layout()
+            self.matrices_layout.removeWidget(self.canvas)
+            self.canvas.deleteLater()
+            self.canvas = None
 
+        self.figure, axes = plt.subplots(nrows=num_matrices, figsize=(5, fig_height))
+        self.canvas = FigureCanvas(self.figure)
+
+        if num_matrices == 1:
+            axes = [axes]
+
+        for i, (val_matrix, ax, arrow_matrix, coordinates) in enumerate(zip(value_matrices, axes, arrow_matrices, alignment_coordinates)):
+            ax.clear()
+
+            seq1, seq2 = sequences
+
+            display_matrix = self.add_sequence_labels(val_matrix, seq1, seq2)
+            self.overlay_arrows(arrow_matrix, display_matrix)
+
+            table = ax.table(cellText=display_matrix, loc='center', cellLoc='center', bbox=[0, 0, 1, 1])
+            self.format_matrix_cells(table, coordinates)
+                    
+            ax.axis('off')
+            # ax.set_aspect('equal') # TODO decide if it should be always square or always rectangular
+            ax.set_title(f"Gap penalty = {gap_penalties[i]}", fontsize=16) # TODO add penalty title
+
+        self.figure.tight_layout()
+
+        self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
+        self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
+    
+    def overlay_arrows(self, arrow_matrix, display_matrix):
+        """Adds arrows to the cell text in the display matrix."""
+        for r, row in enumerate(display_matrix):
+            for c, _ in enumerate(row):
+                if r == 0 or c == 0 or r == 1 or c == 1:
+                    continue
+                arrows = arrow_matrix[r - 1][c - 1]
+                arrow_symbols = ""
+                if 3 in arrows:
+                    arrow_symbols += "←"
+                if 1 in arrows:
+                    arrow_symbols += "↖"
+                if 2 in arrows:
+                    arrow_symbols += "↑"
+                display_matrix[r][c] = f"{arrow_symbols}\n{display_matrix[r][c]}"
+
+
+    def add_sequence_labels(self, value_matrix, seq1, seq2):
+        """ Adds the characters of the sequences to the display matrix' first row and column.
+            Leaves the first two elements in the first row and column blank."""
+        display_matrix = [[''] + [''] + list(seq2)]
+        for row_idx, row in enumerate(value_matrix):
+            seq1_char = ''
+            if row_idx > 0 and row_idx <= len(seq1) + 1:
+                seq1_char = seq1[row_idx - 2]
+            display_matrix.append([seq1_char] + row.tolist())
+        
+        return display_matrix
+
+    def format_matrix_cells(self, table, alignment_coordinates):
+        for key, cell in table.get_celld().items():
+                row, col = key
+                if row == 0 or col == 0:
+                    cell.set_text_props(weight='bold')
+                    cell.set_facecolor('#cccccc')
+                elif row == 1 and col == 1:
+                        cell.set_facecolor('#0ceb6f')
+                elif (row - 1, col - 1) in alignment_coordinates:
+                    cell.set_facecolor('#85e6b0')
 
     def show_main_view(self):
-        # Hide matrix view
-        self.matrices_frame.setVisible(False)
+        self.toggle_matrices_view(False)
 
-        # Show input view
-        self.helper_text.setVisible(True)
-        self.input_frame.setVisible(True)
+    def toggle_matrices_view(self, show_matrices):
+        """
+        Toggles between the input view and the matrix view.
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.setWindowTitle("Gap Penalty Comparator")
-    window.setStyleSheet("background-color: white")
-    window.show()
-    sys.exit(app.exec())
+        Args:
+            show_matrices (bool): If True, show the matrix view; otherwise, show the input view.
+        """
+        self.helper_text.setVisible(not show_matrices)
+        self.input_frame.setVisible(not show_matrices)
+        self.matrices_frame.setVisible(show_matrices)
+    
+    def popup_dialog(self, message, dialog_type):
+        """Displays an error dialog with the given message."""
+        popup_dialog = QMessageBox(self)
+        if dialog_type == "info":
+            popup_dialog.setIcon(QMessageBox.Icon.Information)
+            popup_dialog.setWindowTitle("Information")
+        elif dialog_type == "warning":
+            popup_dialog.setIcon(QMessageBox.Icon.Warning)
+            popup_dialog.setWindowTitle("Warning")
+        elif dialog_type == "error":
+            popup_dialog.setIcon(QMessageBox.Icon.Critical)
+            popup_dialog.setWindowTitle("Error")
+
+        popup_dialog.setText(message)
+        popup_dialog.exec()
+    
+    def get_sequences(self):
+        return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()
+
+    def get_gap_penalties(self):
+        penalties = [self.gap_penalty1.text(), self.gap_penalty2.text(), self.gap_penalty3.text()]
+        return [int(p) for p in penalties if p.strip()]
