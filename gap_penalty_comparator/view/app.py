@@ -8,7 +8,6 @@ from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
 
 from .components.button import Button
 from .components.label import Label
-from .components.text_area import TextArea
 from .components.text_field import TextField
 
 
@@ -17,6 +16,15 @@ class MainWindow(QScrollArea):
         super().__init__()
         self.init_ui()
         self.showMaximized()
+    
+    def keyPressEvent(self, event):
+        """Handle key press events."""
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            submit_button = self.findChild(Button, "submitBtn")
+            if submit_button and submit_button.isVisible():
+                submit_button.click()
+        else:
+            super().keyPressEvent(event)
     
     def init_ui(self):
         # Main container widget (required to make window scrollable)
@@ -27,8 +35,8 @@ class MainWindow(QScrollArea):
         self.setWindowTitle("Gap Penalty Comparator")
         self.setStyleSheet("background-color: white")
         
-        title = Label("Gap Penalty Comparator", self, font_size=20, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("padding: 20px;")
+        title = Label("Gap Penalty Comparator", self, font_size=30, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("padding: 30px;")
         self.main_layout.addWidget(title)
 
         self.helper_text = Label("""
@@ -44,10 +52,10 @@ class MainWindow(QScrollArea):
         input_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Sequence inputs
-        self.input_seq1 = TextArea(400, 150, self, "Enter first sequence")
+        self.input_seq1 = TextField(600, 50, self, "Enter first sequence")
         input_layout.addWidget(self.input_seq1)
         input_layout.addSpacing(10)
-        self.input_seq2 = TextArea(400, 150, self, "Enter second sequence")
+        self.input_seq2 = TextField(600, 50, self, "Enter second sequence")
         input_layout.addWidget(self.input_seq2)
         input_layout.addSpacing(30)
 
@@ -66,9 +74,11 @@ class MainWindow(QScrollArea):
         self.gap_penalty3.setValidator(QIntValidator(-99, 0))
         self.gap_penalty_layout.addWidget(self.gap_penalty3)
 
+        input_layout.addSpacing(30)
         submit_btn = Button(350, 70, "Calculate alignment matrix", self)
         submit_btn.setObjectName("submitBtn")
         input_layout.addWidget(submit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        input_layout.addStretch()
 
         self.matrices_frame = QFrame()
         self.matrices_layout = QVBoxLayout()
