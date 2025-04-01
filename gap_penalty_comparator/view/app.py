@@ -116,22 +116,9 @@ class MainWindow(QScrollArea):
             ax.clear()
 
             seq1, seq2 = sequences
-            len1, len2 = len(seq1), len(seq2)
 
             display_matrix = self.add_sequence_labels(val_matrix, seq1, seq2)
-            
-            # Add arrows to matrix
-            # for r in range(len1):
-            #     for c in range(len2):
-            #         arrow_symbols = []
-            #         if arrows[r][c] == 1:
-            #             arrow_symbols.append("↖")
-            #         if arrows[r][c] == 2:
-            #             arrow_symbols.append("↑")
-            #         if arrows[r][c] == 3:
-            #             arrow_symbols.append("←")
-            #         if arrow_symbols:
-            #             display_matrix[r + 1][c + 1] = str(display_matrix[r + 1][c + 1]) + " " + "".join(arrow_symbols)
+            self.overlay_arrows(ax, arrow_matrix, display_matrix)
 
             table = ax.table(cellText=display_matrix, loc='center', cellLoc='center', bbox=[0, 0, 1, 1])
             self.format_matrix_cells(table, coordinates)
@@ -145,6 +132,23 @@ class MainWindow(QScrollArea):
         self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
         self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
+    
+    def overlay_arrows(self, arrow_matrix, display_matrix):
+        """Adds arrows to the cell text in the display matrix."""
+        for r, row in enumerate(display_matrix):
+            for c, _ in enumerate(row):
+                if r == 0 or c == 0 or r == 1 or c == 1:
+                    continue
+                arrows = arrow_matrix[r - 1][c - 1]
+                arrow_symbols = ""
+                if 3 in arrows:
+                    arrow_symbols += "←"
+                if 1 in arrows:
+                    arrow_symbols += "↖"
+                if 2 in arrows:
+                    arrow_symbols += "↑"
+                display_matrix[r][c] = f"{arrow_symbols}\n{display_matrix[r][c]}"
+
 
     def add_sequence_labels(self, value_matrix, seq1, seq2):
         """ Adds the characters of the sequences to the display matrix' first row and column.
