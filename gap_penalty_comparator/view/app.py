@@ -163,7 +163,10 @@ class MainWindow(QScrollArea):
         """Adds arrows to the cell text in the display matrix."""
         for r, row in enumerate(display_matrix):
             for c, _ in enumerate(row):
-                if r == 0 or c == 0 or r == 1 or c == 1:
+                if r == 0 or c == 0:
+                    continue
+                if r == 1 or c == 1:
+                    display_matrix[r][c] = int(display_matrix[r][c])
                     continue
                 arrows = arrow_matrix[r - 1][c - 1]
                 arrow_symbols = ""
@@ -173,7 +176,7 @@ class MainWindow(QScrollArea):
                     arrow_symbols += "↖"
                 if 2 in arrows:
                     arrow_symbols += "↑"
-                display_matrix[r][c] = f"{arrow_symbols}\n{display_matrix[r][c]}"
+                display_matrix[r][c] = f"{arrow_symbols}\n{int(display_matrix[r][c])}"
 
 
     def add_sequence_labels(self, value_matrix, seq1, seq2):
@@ -243,7 +246,7 @@ class MainWindow(QScrollArea):
             QApplication.restoreOverrideCursor()
     
     def get_sequences(self):
-        return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()
+        return self.input_seq1.text(), self.input_seq2.text()
 
     def get_gap_penalties(self):
         penalties = [self.gap_penalty1.text(), self.gap_penalty2.text(), self.gap_penalty3.text()]
