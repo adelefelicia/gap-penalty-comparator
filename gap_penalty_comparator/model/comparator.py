@@ -64,8 +64,7 @@ def initialize_value_matrix(s1, s2, gap_penalty):
 
     return matrix
 
-def backtrack_global_alignment(s1, s2, arrow_matrix):
-
+def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
     coordinates = []
 
     row_idx = len(s1)
@@ -73,14 +72,29 @@ def backtrack_global_alignment(s1, s2, arrow_matrix):
     coordinates.append((row_idx, col_idx))
 
     while row_idx > 0 and col_idx > 0:
-        prev_arrow = arrow_matrix[row_idx, col_idx]
+        prev_cell_arrows = arrow_matrix[row_idx, col_idx]
 
-        if 1 in prev_arrow:
+        if len(prev_cell_arrows) > 1:
+            # If there are multiple arrows, choose the one leading to the highest value
+            top_val = value_matrix[row_idx - 1, col_idx]
+            left_val = value_matrix[row_idx, col_idx - 1]
+            diag_val = value_matrix[row_idx - 1, col_idx - 1]
+            
+            if diag_val >= top_val and diag_val >= left_val:
+                row_idx -= 1
+                col_idx -= 1
+            elif top_val >= diag_val and top_val >= left_val:
+                row_idx -= 1
+            elif left_val >= diag_val and left_val >= top_val:
+                col_idx -= 1
+
+
+        elif 1 in prev_cell_arrows:
             row_idx -= 1
             col_idx -= 1
-        elif 2 in prev_arrow:
+        elif 2 in prev_cell_arrows:
             row_idx -= 1
-        elif 3 in prev_arrow:
+        elif 3 in prev_cell_arrows:
             col_idx -= 1
 
         coordinates.append((row_idx, col_idx))
