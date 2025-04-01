@@ -26,6 +26,10 @@ class Controller:
                 self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
                 return
 
+            if len(seq1) > 30 or len(seq2) > 30:
+                self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read.", "info")
+                return
+
             gap_penalties = self.view.get_gap_penalties()
 
             if len(gap_penalties) < 2:
@@ -36,6 +40,7 @@ class Controller:
             arrow_matrices = []
             alignment_coordinates = []
 
+            self.view.loading_cursor(True)
             for penalty in gap_penalties:
                 val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
                 coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix)
@@ -45,8 +50,10 @@ class Controller:
                 alignment_coordinates.append(coordinate_list)
 
             self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
+            self.view.loading_cursor(False)
 
         except Exception as e:
+            print(e)
             self.view.popup_dialog(f"An unexpected error occurred. Try restarting the application.", "error")
 
     def parse_input(self, input1, input2):

@@ -3,12 +3,11 @@ from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import (QFrame, QMessageBox, QScrollArea, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
+                             QVBoxLayout, QWidget)
 
 from .components.button import Button
 from .components.label import Label
-from .components.text_area import TextArea
 from .components.text_field import TextField
 
 
@@ -16,10 +15,18 @@ class MainWindow(QScrollArea):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.showMaximized()
+    
+    def keyPressEvent(self, event):
+        """Handle key press events."""
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            submit_button = self.findChild(Button, "submitBtn")
+            if submit_button and submit_button.isVisible():
+                submit_button.click()
+        else:
+            super().keyPressEvent(event)
     
     def init_ui(self):
-        self.resize(1000, 1000)
-
         # Main container widget (required to make window scrollable)
         self.main_widget = QWidget()
         self.main_layout = QVBoxLayout(self.main_widget)
@@ -28,8 +35,8 @@ class MainWindow(QScrollArea):
         self.setWindowTitle("Gap Penalty Comparator")
         self.setStyleSheet("background-color: white")
         
-        title = Label("Gap Penalty Comparator", self, font_size=20, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("padding: 20px;")
+        title = Label("Gap Penalty Comparator", self, font_size=30, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("padding: 30px;")
         self.main_layout.addWidget(title)
 
         self.helper_text = Label("""
@@ -45,10 +52,10 @@ class MainWindow(QScrollArea):
         input_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Sequence inputs
-        self.input_seq1 = TextArea(400, 150, self, "Enter first sequence")
+        self.input_seq1 = TextField(600, 50, self, "Enter first sequence")
         input_layout.addWidget(self.input_seq1)
         input_layout.addSpacing(10)
-        self.input_seq2 = TextArea(400, 150, self, "Enter second sequence")
+        self.input_seq2 = TextField(600, 50, self, "Enter second sequence")
         input_layout.addWidget(self.input_seq2)
         input_layout.addSpacing(30)
 
@@ -67,9 +74,11 @@ class MainWindow(QScrollArea):
         self.gap_penalty3.setValidator(QIntValidator(-99, 0))
         self.gap_penalty_layout.addWidget(self.gap_penalty3)
 
+        input_layout.addSpacing(30)
         submit_btn = Button(350, 70, "Calculate alignment matrix", self)
         submit_btn.setObjectName("submitBtn")
         input_layout.addWidget(submit_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        input_layout.addStretch()
 
         self.matrices_frame = QFrame()
         self.matrices_layout = QVBoxLayout()
@@ -125,12 +134,28 @@ class MainWindow(QScrollArea):
             self.format_matrix_cells(table, coordinates)
                     
             ax.axis('off')
-            # ax.set_aspect('equal') # TODO decide if it should be always square or always rectangular
             ax.set_title(f"Gap penalty = {gap_penalties[i]}", fontsize=16) # TODO add penalty title
 
         self.figure.tight_layout()
 
-        self.canvas.setFixedSize(int(self.figure.get_size_inches()[0] * 150), int(fig_height * 150))
+        max_seq_length = max(len(sequences[0]), len(sequences[1]))
+
+        # Quadratic scaling function for the canvas size
+        calculated_width = int(self.figure.get_size_inches()[0] * (50 + 0.5 * max_seq_length ** 2))
+        calculated_height = int(fig_height * (50 + 0.5 * max_seq_length ** 2))
+
+        min_width = int(self.figure.get_size_inches()[0] * 150)
+        min_height = int(fig_height * 150)
+
+        screen_geometry = QApplication.primaryScreen().availableGeometry()
+        max_width = screen_geometry.width()
+        max_height = screen_geometry.height()
+
+        # Clamp the width and height to the specified interval
+        width = max(min_width, min(calculated_width, max_width))
+        height = max(min_height, min(calculated_height, max_height))
+
+        self.canvas.setFixedSize(width, height)
         self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
     
@@ -164,6 +189,12 @@ class MainWindow(QScrollArea):
         return display_matrix
 
     def format_matrix_cells(self, table, alignment_coordinates):
+        max_font_size = 16 
+        min_font_size = 8
+
+        # Dynamically calculate font size (inverse proportionality)
+        font_size = max(min_font_size, min(max_font_size, int(100 / (len(alignment_coordinates) + 1))))
+
         for key, cell in table.get_celld().items():
                 row, col = key
                 if row == 0 or col == 0:
@@ -173,6 +204,7 @@ class MainWindow(QScrollArea):
                         cell.set_facecolor('#0ceb6f')
                 elif (row - 1, col - 1) in alignment_coordinates:
                     cell.set_facecolor('#85e6b0')
+                cell.set_text_props(fontsize=font_size)
 
     def show_main_view(self):
         self.toggle_matrices_view(False)
@@ -203,6 +235,12 @@ class MainWindow(QScrollArea):
 
         popup_dialog.setText(message)
         popup_dialog.exec()
+    
+    def loading_cursor(self, loading):
+        if loading:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        else:
+            QApplication.restoreOverrideCursor()
     
     def get_sequences(self):
         return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()
