@@ -14,27 +14,50 @@ class Controller:
 
     def run_algorithm(self):
         """Fetches inputs from the view, runs the algorithm, and updates the view with results."""
-        seq1, seq2 = self.view.get_sequences() # TODO parse sequences
-        gap_penalties = self.view.get_gap_penalties()
+        try:
+            seq1, seq2 = self.view.get_sequences()
+            seq1, seq2 = self.parse_input(seq1, seq2)
 
-        # if len(gap_penalties) < 2:
-        #     print("Please enter at least two gap penalties!")  # TODO Replace with proper error handling
-        #     return
+            if not seq1 or not seq2:
+                self.view.popup_dialog("Please enter both sequences.", "warning")
+                return
 
+            if not seq1.isalpha() and seq2.isalpha():
+                self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
+                return
 
-        value_matrices = []
-        arrow_matrices = []
-        alignment_coordinates = []
+            gap_penalties = self.view.get_gap_penalties()
 
-        for penalty in gap_penalties:
-            val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
-            coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix)
+            if len(gap_penalties) < 2:
+                self.view.popup_dialog("Please enter at least two gap penalties to compare.", "warning")
+                return
 
-            value_matrices.append(val_matrix)
-            arrow_matrices.append(arrow_matrix)
-            alignment_coordinates.append(coordinate_list)
+            value_matrices = []
+            arrow_matrices = []
+            alignment_coordinates = []
 
-        self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates) 
+            for penalty in gap_penalties:
+                val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
+                coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix)
+
+                value_matrices.append(val_matrix)
+                arrow_matrices.append(arrow_matrix)
+                alignment_coordinates.append(coordinate_list)
+
+            self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates)
+
+        except Exception as e:
+            self.view.popup_dialog(f"An unexpected error occurred. Try restarting the application.", "error")
+
+    def parse_input(self, input1, input2):
+        """
+        Parse the input strings by removing whitespace and converting
+        them to uppercase.
+        """
+        input1 = ''.join(input1.upper().split())
+        input2 = ''.join(input2.upper().split())
+
+        return input1, input2
 
     def run(self):
         """Starts the application."""

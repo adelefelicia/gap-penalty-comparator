@@ -3,7 +3,8 @@ from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import QFrame, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (QFrame, QMessageBox, QScrollArea, QVBoxLayout,
+                             QWidget)
 
 from .components.button import Button
 from .components.label import Label
@@ -118,7 +119,7 @@ class MainWindow(QScrollArea):
             seq1, seq2 = sequences
 
             display_matrix = self.add_sequence_labels(val_matrix, seq1, seq2)
-            self.overlay_arrows(ax, arrow_matrix, display_matrix)
+            self.overlay_arrows(arrow_matrix, display_matrix)
 
             table = ax.table(cellText=display_matrix, loc='center', cellLoc='center', bbox=[0, 0, 1, 1])
             self.format_matrix_cells(table, coordinates)
@@ -171,7 +172,7 @@ class MainWindow(QScrollArea):
                 elif row == 1 and col == 1:
                         cell.set_facecolor('#0ceb6f')
                 elif (row - 1, col - 1) in alignment_coordinates:
-                    cell.set_facecolor('#85e6b0') 
+                    cell.set_facecolor('#85e6b0')
 
     def show_main_view(self):
         self.toggle_matrices_view(False)
@@ -186,6 +187,22 @@ class MainWindow(QScrollArea):
         self.helper_text.setVisible(not show_matrices)
         self.input_frame.setVisible(not show_matrices)
         self.matrices_frame.setVisible(show_matrices)
+    
+    def popup_dialog(self, message, dialog_type):
+        """Displays an error dialog with the given message."""
+        popup_dialog = QMessageBox(self)
+        if dialog_type == "info":
+            popup_dialog.setIcon(QMessageBox.Icon.Information)
+            popup_dialog.setWindowTitle("Information")
+        elif dialog_type == "warning":
+            popup_dialog.setIcon(QMessageBox.Icon.Warning)
+            popup_dialog.setWindowTitle("Warning")
+        elif dialog_type == "error":
+            popup_dialog.setIcon(QMessageBox.Icon.Critical)
+            popup_dialog.setWindowTitle("Error")
+
+        popup_dialog.setText(message)
+        popup_dialog.exec()
     
     def get_sequences(self):
         return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()
