@@ -3,8 +3,8 @@ from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import (QFrame, QMessageBox, QScrollArea, QVBoxLayout,
-                             QWidget, QApplication)
+from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
+                             QVBoxLayout, QWidget)
 
 from .components.button import Button
 from .components.label import Label
@@ -225,6 +225,12 @@ class MainWindow(QScrollArea):
 
         popup_dialog.setText(message)
         popup_dialog.exec()
+    
+    def loading_cursor(self, loading):
+        if loading:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        else:
+            QApplication.restoreOverrideCursor()
     
     def get_sequences(self):
         return self.input_seq1.toPlainText(), self.input_seq2.toPlainText()

@@ -40,6 +40,7 @@ class Controller:
             arrow_matrices = []
             alignment_coordinates = []
 
+            self.view.loading_cursor(True)
             for penalty in gap_penalties:
                 val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
                 coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix)
@@ -49,6 +50,7 @@ class Controller:
                 alignment_coordinates.append(coordinate_list)
 
             self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
+            self.view.loading_cursor(False)
 
         except Exception as e:
             print(e)
