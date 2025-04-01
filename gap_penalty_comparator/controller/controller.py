@@ -43,7 +43,7 @@ class Controller:
             self.view.loading_cursor(True)
             for penalty in gap_penalties:
                 val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
-                coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix)
+                coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix, val_matrix)
 
                 value_matrices.append(val_matrix)
                 arrow_matrices.append(arrow_matrix)
