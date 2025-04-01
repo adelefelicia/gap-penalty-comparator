@@ -44,7 +44,7 @@ class Controller:
                 arrow_matrices.append(arrow_matrix)
                 alignment_coordinates.append(coordinate_list)
 
-            self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates)
+            self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
 
         except Exception as e:
             self.view.popup_dialog(f"An unexpected error occurred. Try restarting the application.", "error")

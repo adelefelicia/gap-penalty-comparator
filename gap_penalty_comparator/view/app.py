@@ -85,7 +85,7 @@ class MainWindow(QScrollArea):
         self.main_layout.addWidget(self.input_frame, stretch=1)  # Stretch keeps title from moving between views
         self.main_layout.addWidget(self.matrices_frame, stretch=1) # Stretch keeps title from moving between views
     
-    def display_matrices(self, value_matrices, arrow_matrices, sequences, alignment_coordinates):
+    def display_matrices(self, value_matrices, arrow_matrices, sequences, alignment_coordinates, gap_penalties):
         """
         Displays the generated alignment matrices with labels and arrows.
 
@@ -126,7 +126,7 @@ class MainWindow(QScrollArea):
                     
             ax.axis('off')
             # ax.set_aspect('equal') # TODO decide if it should be always square or always rectangular
-            ax.set_title(f"Generated Matrix {i + 1}", fontsize=16) # TODO add penalty title
+            ax.set_title(f"Gap penalty = {gap_penalties[i]}", fontsize=16) # TODO add penalty title
 
         self.figure.tight_layout()
 
