@@ -39,7 +39,6 @@ class MainWindow(QScrollArea):
         self.setWidget(self.main_widget)
         self.setWidgetResizable(True)
         self.setWindowTitle("Gap Penalty Comparator")
-        self.setStyleSheet("background-color: white")
         
         title = Label("Gap Penalty Comparator", self, font_size=30, weight=QFont.Weight.Bold, alignment=Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("padding: 30px;")
