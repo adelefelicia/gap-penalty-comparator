@@ -1,14 +1,17 @@
+import blosum as bl
 import numpy as np
 
 
-def needleman_wunsch(s1, s2, gap_penalty=-2):
+def needleman_wunsch(s1, s2, gap_penalty, use_blosum):
     """
     Implement the Needleman-Wunsch algorithm for global alignment.
 
     Args:
         s1 (str): sequence 1
         s2 (str): sequence 2
-        gap_penalty (int): penalty for gaps, default is -2
+        gap_penalty (int): penalty for gaps
+        use_blosum (bool): whether to use BLOSUM62 matrix for scoring (True), or
+                            match/mismatch scoring of 1/-1 (False)
 
     Returns:
         (tuple): tuple containing:
@@ -22,13 +25,20 @@ def needleman_wunsch(s1, s2, gap_penalty=-2):
     value_matrix = initialize_value_matrix(s1, s2, gap_penalty)
     arrow_matrix = np.zeros(value_matrix.shape, dtype=object)
 
+    if use_blosum:
+        blosum_matrix = bl.BLOSUM(62)
+
     for row_idx in range(1, value_matrix.shape[0]):
         for col_idx in range(1, value_matrix.shape[1]):
             is_match = s1[row_idx - 1] == s2[col_idx - 1]
 
             top_val = value_matrix[row_idx - 1, col_idx] + gap_penalty
             left_val = value_matrix[row_idx, col_idx - 1] + gap_penalty
-            diag_val = value_matrix[row_idx - 1, col_idx - 1] + (match_score if is_match else mismatch_score)
+
+            if use_blosum:
+                diag_val = value_matrix[row_idx - 1, col_idx - 1] + blosum_matrix[s1[row_idx - 1]][s2[col_idx - 1]]
+            else:
+                diag_val = value_matrix[row_idx - 1, col_idx - 1] + (match_score if is_match else mismatch_score)
 
             value_matrix[row_idx, col_idx] = max(top_val, left_val, diag_val)
             arrow_matrix[row_idx, col_idx] = value_to_arrows(top_val, left_val, diag_val)
@@ -120,7 +130,7 @@ def find_gaps(coordinates):
 
         # If there is no gap, assume any previous is closed
         elif prev_gap["count"] > 0:
-            close_gap(prev_gap, gaps)
+            prev_gap, gaps = close_gap(prev_gap, gaps)
 
     return gaps
 
@@ -135,7 +145,7 @@ def extends_prev_gap(prev_gap, same_row, same_col, gaps):
         prev_gap["count"] += 1
     # If the gap alternates between sequences, close the previous gap and start a new one
     elif (prev_gap["seq"] == 1 and same_col) or (prev_gap["seq"] == 2 and same_row):
-        close_gap(prev_gap, gaps)
+        prev_gap, gaps = close_gap(prev_gap, gaps)
         prev_gap["count"] = 1
         prev_gap["seq"] = 1 if same_row else 2
     # Start a new gap if no previous gap exists
@@ -152,3 +162,5 @@ def close_gap(prev_gap, gaps):
     gaps.append(prev_gap["count"])
     prev_gap["count"] = 0
     prev_gap["seq"] = 0
+    
+    return prev_gap, gaps
