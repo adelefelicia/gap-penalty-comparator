@@ -46,8 +46,11 @@ class MainWindow(QScrollArea):
         self.main_layout.addWidget(title)
 
         self.helper_text = Label("""
-            Compare how different gap penalties impact global alignments in the Needleman-Wunsch algorithm.
-            Enter two sequences and at least two gap penalties to generate the alignment matrices.
+            Compare how different gap penalties impact global alignments for the Needleman-Wunsch algorithm.
+                                 
+            Choose between BLOSUM62 or identity (-/+ 1 for (mis)match) scoring methods.
+            Enter two sequences and three gap penalties to generate the alignment matrices and compare
+            the results.
         """, self, alignment=Qt.AlignmentFlag.AlignCenter)
         self.helper_text.setWordWrap(True)
         self.main_layout.addWidget(self.helper_text)
