@@ -1,3 +1,5 @@
+from statistics import fmean
+
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
@@ -8,9 +10,8 @@ from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
 
 from .components.button import Button
 from .components.label import Label
-from .components.text_field import TextField
 from .components.table import Table
-from statistics import fmean
+from .components.text_field import TextField
 
 
 class MainWindow(QScrollArea):

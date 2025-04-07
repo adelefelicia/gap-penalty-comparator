@@ -1,6 +1,7 @@
 import sys
 
-from model.comparator import backtrack_global_alignment, needleman_wunsch, find_gaps
+from model.comparator import (backtrack_global_alignment, find_gaps,
+                              needleman_wunsch)
 from PyQt6.QtWidgets import QApplication, QPushButton
 from view.app import MainWindow
 
