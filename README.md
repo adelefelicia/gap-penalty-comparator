@@ -25,7 +25,7 @@ The app has only been tested on computers with Windows 11 operating system. It r
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/gap-penalty-comparator.git
+   git clone https://github.com/adelefelicia/gap-penalty-comparator.git
    ```
 2. Navigate to the project directory:
    ```bash
