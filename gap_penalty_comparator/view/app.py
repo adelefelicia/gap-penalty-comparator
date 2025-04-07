@@ -189,9 +189,6 @@ class MainWindow(QScrollArea):
             for c, _ in enumerate(row):
                 if r == 0 or c == 0:
                     continue
-                if r == 1 or c == 1:
-                    display_matrix[r][c] = int(display_matrix[r][c])
-                    continue
                 arrows = arrow_matrix[r - 1][c - 1]
                 arrow_symbols = ""
                 if 3 in arrows:

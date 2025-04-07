@@ -23,7 +23,7 @@ def needleman_wunsch(s1, s2, gap_penalty, use_blosum):
     mismatch_score = -1
 
     value_matrix = initialize_value_matrix(s1, s2, gap_penalty)
-    arrow_matrix = np.zeros(value_matrix.shape, dtype=object)
+    arrow_matrix = initialize_arrow_matrix(s1, s2)
 
     if use_blosum:
         blosum_matrix = bl.BLOSUM(62)
@@ -60,6 +60,20 @@ def value_to_arrows(top_val, left_val, diag_val):
     
     return np.array(arrows)
 
+def initialize_arrow_matrix(s1, s2):
+    """
+    Initialize the arrow matrix with the correct dimensions and values.
+    No arrows for position (0,0), [3] for the first row, and [2] for the first column.
+    """
+    matrix = np.zeros((len(s1) + 1, len(s2) + 1), dtype=object)
+    for col in range(1, matrix.shape[1]):
+        matrix[0, col] = [3]
+    for row in range(1, matrix.shape[0]):
+        matrix[row, 0] = [2]
+
+    matrix[0, 0] = []
+    return matrix
+
 def initialize_value_matrix(s1, s2, gap_penalty):
     """
     Initialize the matrix with the correct dimensions and values.
@@ -81,7 +95,7 @@ def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
     col_idx = len(s2)
     coordinates.append((row_idx, col_idx))
 
-    while row_idx > 0 and col_idx > 0:
+    while not (row_idx == 0 and col_idx == 0):
         prev_cell_arrows = arrow_matrix[row_idx, col_idx]
 
         if len(prev_cell_arrows) > 1:
