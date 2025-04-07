@@ -80,14 +80,13 @@ def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
             left_val = value_matrix[row_idx, col_idx - 1]
             diag_val = value_matrix[row_idx - 1, col_idx - 1]
             
-            if diag_val >= top_val and diag_val >= left_val:
+            if 1 in prev_cell_arrows and diag_val >= top_val and diag_val >= left_val:
                 row_idx -= 1
                 col_idx -= 1
-            elif top_val >= diag_val and top_val >= left_val:
+            elif 2 in prev_cell_arrows and top_val >= diag_val and top_val >= left_val:
                 row_idx -= 1
-            elif left_val >= diag_val and left_val >= top_val:
+            elif 3 in prev_cell_arrows and left_val >= diag_val and left_val >= top_val:
                 col_idx -= 1
-
 
         elif 1 in prev_cell_arrows:
             row_idx -= 1
@@ -100,3 +99,56 @@ def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
         coordinates.append((row_idx, col_idx))
 
     return coordinates
+
+def find_gaps(coordinates):
+    """
+    Find the number of gaps in the alignment.
+    Returns:
+        gaps (list): list of lengths of gaps found in the alignment
+    """
+    gaps = []
+    prev_gap = {"count": 0, "seq": 0}
+    for i in range(len(coordinates) - 1):
+        row_idx, col_idx = coordinates[i]
+        next_row_idx, next_col_idx = coordinates[i + 1]
+        same_row = row_idx == next_row_idx
+        same_col = col_idx == next_col_idx
+
+        if (same_row and col_idx != next_col_idx) or (same_col and row_idx != next_row_idx):
+            # Check if the gap is extending the previous one, or start a new one
+            prev_gap = extends_prev_gap(prev_gap, same_row, same_col, gaps)
+
+        # If there is no gap, assume any previous is closed
+        elif prev_gap["count"] > 0:
+            close_gap(prev_gap, gaps)
+
+    return gaps
+
+def extends_prev_gap(prev_gap, same_row, same_col, gaps):
+    """
+    Check if the current gap extends the previous one, otherwise start a new gap.
+    """
+    # Check if the gap is extending the previous one
+    if prev_gap["seq"] == 1 and same_row:
+        prev_gap["count"] += 1
+    elif prev_gap["seq"] == 2 and same_col:
+        prev_gap["count"] += 1
+    # If the gap alternates between sequences, close the previous gap and start a new one
+    elif (prev_gap["seq"] == 1 and same_col) or (prev_gap["seq"] == 2 and same_row):
+        close_gap(prev_gap, gaps)
+        prev_gap["count"] = 1
+        prev_gap["seq"] = 1 if same_row else 2
+    # Start a new gap if no previous gap exists
+    elif prev_gap["seq"] == 0:
+        prev_gap["count"] = 1
+        prev_gap["seq"] = 1 if same_row else 2
+
+    return prev_gap
+
+def close_gap(prev_gap, gaps):
+    """
+    Close the previous gap by adding count to list of gaps and
+    setting counter and seq to 0."""
+    gaps.append(prev_gap["count"])
+    prev_gap["count"] = 0
+    prev_gap["seq"] = 0
