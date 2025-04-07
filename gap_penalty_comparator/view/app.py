@@ -5,7 +5,8 @@ from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
+from PyQt6.QtWidgets import (QApplication, QButtonGroup, QFrame, QHBoxLayout,
+                             QMessageBox, QRadioButton, QScrollArea,
                              QVBoxLayout, QWidget)
 
 from .components.button import Button
@@ -45,8 +46,11 @@ class MainWindow(QScrollArea):
         self.main_layout.addWidget(title)
 
         self.helper_text = Label("""
-            Compare how different gap penalties impact global alignments in the Needleman-Wunsch algorithm.
-            Enter two sequences and at least two gap penalties to generate the alignment matrices.
+            Compare how different gap penalties impact global alignments for the Needleman-Wunsch algorithm.
+                                 
+            Choose between BLOSUM62 or identity (-/+ 1 for (mis)match) scoring methods.
+            Enter two sequences and three gap penalties to generate the alignment matrices and compare
+            the results.
         """, self, alignment=Qt.AlignmentFlag.AlignCenter)
         self.helper_text.setWordWrap(True)
         self.main_layout.addWidget(self.helper_text)
@@ -55,6 +59,22 @@ class MainWindow(QScrollArea):
         input_layout = QVBoxLayout()
         self.input_frame.setLayout(input_layout)
         input_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        radio_frame = QFrame()
+        radio_layout = QHBoxLayout()
+        radio_frame.setLayout(radio_layout)
+        radio_layout.addWidget(Label("Scoring method:", self, font_size=12))
+
+        # Scoring method radio buttons
+        self.radio_blosum = QRadioButton("BLOSUM62", self)
+        self.radio_identity = QRadioButton("Identity", self)
+        self.radio_identity.setChecked(True)
+        self.radio_group = QButtonGroup(self)
+        self.radio_group.addButton(self.radio_blosum)
+        self.radio_group.addButton(self.radio_identity)
+        radio_layout.addWidget(self.radio_blosum)
+        radio_layout.addWidget(self.radio_identity)
+        input_layout.addWidget(radio_frame)
         
         # Sequence inputs
         self.input_seq1 = TextField(600, 50, self, "Enter first sequence")
@@ -109,6 +129,7 @@ class MainWindow(QScrollArea):
             sequences (tuple): tuple containing the two sequences being aligned
             alignment_coordinates (list(list(int))): nested list of coordinates for positions of the alignment cells
         """
+        seq1, seq2 = sequences
         self.toggle_matrices_view(True)
         self.matrices_layout.removeWidget(self.table) if hasattr(self, 'table') else None
         self.create_and_populate_table()
@@ -132,8 +153,6 @@ class MainWindow(QScrollArea):
         for i, (val_matrix, ax, arrow_matrix, coordinates) in enumerate(zip(value_matrices, axes, arrow_matrices, alignment_coordinates)):
             ax.clear()
 
-            seq1, seq2 = sequences
-
             display_matrix = self.add_sequence_labels(val_matrix, seq1, seq2)
             self.overlay_arrows(arrow_matrix, display_matrix)
 
@@ -149,7 +168,7 @@ class MainWindow(QScrollArea):
 
         # Quadratic scaling function for the canvas size
         calculated_width = int(self.figure.get_size_inches()[0] * (50 + 0.5 * max_seq_length ** 2))
-        calculated_height = int(fig_height * (50 + 0.5 * max_seq_length ** 2))
+        calculated_height = int(fig_height * (200 + 0.5 * max_seq_length ** 2))
 
         min_width = int(self.figure.get_size_inches()[0] * 150)
         min_height = int(fig_height * 150)
@@ -165,15 +184,13 @@ class MainWindow(QScrollArea):
         self.canvas.setFixedSize(width, height)
         self.matrices_layout.addWidget(self.canvas, alignment=Qt.AlignmentFlag.AlignCenter)
         self.canvas.draw()
+
     
     def overlay_arrows(self, arrow_matrix, display_matrix):
         """Adds arrows to the cell text in the display matrix."""
         for r, row in enumerate(display_matrix):
             for c, _ in enumerate(row):
                 if r == 0 or c == 0:
-                    continue
-                if r == 1 or c == 1:
-                    display_matrix[r][c] = int(display_matrix[r][c])
                     continue
                 arrows = arrow_matrix[r - 1][c - 1]
                 arrow_symbols = ""
@@ -193,7 +210,7 @@ class MainWindow(QScrollArea):
         for row_idx, row in enumerate(value_matrix):
             seq1_char = ''
             if row_idx > 0 and row_idx <= len(seq1) + 1:
-                seq1_char = seq1[row_idx - 2]
+                seq1_char = seq1[row_idx - 1]
             display_matrix.append([seq1_char] + row.tolist())
         
         return display_matrix
@@ -278,3 +295,13 @@ class MainWindow(QScrollArea):
     
     def set_gaps(self, gaps):
         self.gaps = gaps
+    
+    def get_scoring_method(self):
+        """
+        Returns the currently selected scoring method.
+        """
+        if self.radio_blosum.isChecked():
+            return "BLOSUM62"
+        elif self.radio_identity.isChecked():
+            return "Identity"
+        return None

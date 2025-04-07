@@ -18,14 +18,20 @@ class Controller:
         try:
             seq1, seq2 = self.view.get_sequences()
             seq1, seq2 = self.parse_input(seq1, seq2)
+            scoring_method = self.view.get_scoring_method()
 
             if not seq1 or not seq2:
                 self.view.popup_dialog("Please enter both sequences.", "warning")
                 return
-
-            if not seq1.isalpha() and seq2.isalpha():
-                self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
-                return
+            
+            if scoring_method == "BLOSUM62":
+                if not self.validate_blosum_input(seq1, seq2):
+                    self.view.popup_dialog("Invalid characters in sequences. Only amino acids are allowed.", "warning")
+                    return
+            elif scoring_method == "Identity":
+                if not seq1.isalpha() and seq2.isalpha():
+                    self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
+                    return
 
             if len(seq1) > 30 or len(seq2) > 30:
                 self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read.", "info")
@@ -36,7 +42,7 @@ class Controller:
             if len(gap_penalties) < 3:
                 self.view.popup_dialog("Please enter three gap penalties to compare.", "warning")
                 return
-
+            
             value_matrices = []
             arrow_matrices = []
             alignment_coordinates = []
@@ -44,7 +50,7 @@ class Controller:
 
             self.view.loading_cursor(True)
             for penalty in gap_penalties:
-                val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty)
+                val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty, scoring_method=="BLOSUM62")
                 coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix, val_matrix)
 
                 value_matrices.append(val_matrix)
@@ -69,6 +75,17 @@ class Controller:
         input2 = ''.join(input2.upper().split())
 
         return input1, input2
+
+    def validate_blosum_input(self, input1, input2):
+        """
+        Validate the input sequences to ensure they only contain valid
+        amino acid characters.
+        """
+        valid_chars = set("ARNDCQEGHILKMFPSTWYVBZX")
+        if set(input1).issubset(valid_chars) and set(input2).issubset(valid_chars):
+            return True
+        else:
+            return False
 
     def run(self):
         """Starts the application."""
