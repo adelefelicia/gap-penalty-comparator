@@ -46,4 +46,4 @@ The app has only been tested on computers with Windows 11 operating system. It r
    ```
 
 ## Acknowledgements
-The BLOSUM62 matrix is provided by the (blosum)[https://pypi.org/project/blosum/] Python package.
+The BLOSUM62 matrix is provided by the [blosum](https://pypi.org/project/blosum/) Python package.
