@@ -35,7 +35,6 @@ class Controller:
 
             if len(seq1) > 30 or len(seq2) > 30:
                 self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read.", "info")
-                return
 
             gap_penalties = self.view.get_gap_penalties()
 
