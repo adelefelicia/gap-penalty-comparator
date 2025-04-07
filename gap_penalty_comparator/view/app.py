@@ -1,3 +1,5 @@
+from statistics import fmean
+
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
@@ -8,6 +10,7 @@ from PyQt6.QtWidgets import (QApplication, QFrame, QMessageBox, QScrollArea,
 
 from .components.button import Button
 from .components.label import Label
+from .components.table import Table
 from .components.text_field import TextField
 
 
@@ -16,6 +19,8 @@ class MainWindow(QScrollArea):
         super().__init__()
         self.init_ui()
         self.showMaximized()
+        
+        self.gaps = []
     
     def keyPressEvent(self, event):
         """Handle key press events."""
@@ -105,6 +110,8 @@ class MainWindow(QScrollArea):
             alignment_coordinates (list(list(int))): nested list of coordinates for positions of the alignment cells
         """
         self.toggle_matrices_view(True)
+        self.matrices_layout.removeWidget(self.table) if hasattr(self, 'table') else None
+        self.create_and_populate_table()
 
         num_matrices = len(value_matrices)
         fig_height = max(5, 3 * num_matrices)
@@ -244,6 +251,23 @@ class MainWindow(QScrollArea):
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         else:
             QApplication.restoreOverrideCursor()
+
+    def mean_or_zero(self, gaps):
+        """Returns the mean of the gaps or 0 if there are no gaps."""
+        return round(fmean(gaps), 1) if gaps else 0
+
+    def create_and_populate_table(self):
+        """Populates the table with the given items."""
+        self.table = Table(["Num of gaps", "Avg. gap length"],
+                            [f"Penalty={self.gap_penalty1.text()}",
+                             f"Penalty={self.gap_penalty2.text()}",
+                             f"Penalty={self.gap_penalty3.text()}"],
+                             [[len(self.gaps[0]), self.mean_or_zero(self.gaps[0])],
+                                [len(self.gaps[1]), self.mean_or_zero(self.gaps[1])],
+                                [len(self.gaps[2]), self.mean_or_zero(self.gaps[2])]],
+                            self)
+        self.table.setMaximumWidth(400)
+        self.matrices_layout.addWidget(self.table, alignment=Qt.AlignmentFlag.AlignCenter)
     
     def get_sequences(self):
         return self.input_seq1.text(), self.input_seq2.text()
@@ -251,3 +275,6 @@ class MainWindow(QScrollArea):
     def get_gap_penalties(self):
         penalties = [self.gap_penalty1.text(), self.gap_penalty2.text(), self.gap_penalty3.text()]
         return [int(p) for p in penalties if p.strip()]
+    
+    def set_gaps(self, gaps):
+        self.gaps = gaps

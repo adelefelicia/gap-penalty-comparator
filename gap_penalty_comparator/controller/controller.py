@@ -1,6 +1,7 @@
 import sys
 
-from model.comparator import backtrack_global_alignment, needleman_wunsch
+from model.comparator import (backtrack_global_alignment, find_gaps,
+                              needleman_wunsch)
 from PyQt6.QtWidgets import QApplication, QPushButton
 from view.app import MainWindow
 
@@ -32,13 +33,14 @@ class Controller:
 
             gap_penalties = self.view.get_gap_penalties()
 
-            if len(gap_penalties) < 2:
-                self.view.popup_dialog("Please enter at least two gap penalties to compare.", "warning")
+            if len(gap_penalties) < 3:
+                self.view.popup_dialog("Please enter three gap penalties to compare.", "warning")
                 return
 
             value_matrices = []
             arrow_matrices = []
             alignment_coordinates = []
+            gaps = []
 
             self.view.loading_cursor(True)
             for penalty in gap_penalties:
@@ -48,7 +50,9 @@ class Controller:
                 value_matrices.append(val_matrix)
                 arrow_matrices.append(arrow_matrix)
                 alignment_coordinates.append(coordinate_list)
+                gaps.append(find_gaps(coordinate_list))                
 
+            self.view.set_gaps(gaps)
             self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
             self.view.loading_cursor(False)
 
