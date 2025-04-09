@@ -1,9 +1,9 @@
 import sys
 
-from model.comparator import (backtrack_global_alignment, find_gaps,
-                              needleman_wunsch)
 from PyQt6.QtWidgets import QApplication, QPushButton
 from view.app import MainWindow
+
+from .alignment_worker import AlignmentWorker
 
 
 class Controller:
@@ -41,29 +41,48 @@ class Controller:
             if len(gap_penalties) < 3:
                 self.view.popup_dialog("Please enter three gap penalties to compare.", "warning")
                 return
-            
-            value_matrices = []
-            arrow_matrices = []
-            alignment_coordinates = []
-            gaps = []
 
             self.view.loading_cursor(True)
-            for penalty in gap_penalties:
-                val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty, scoring_method=="BLOSUM62")
-                coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix, val_matrix)
 
-                value_matrices.append(val_matrix)
-                arrow_matrices.append(arrow_matrix)
-                alignment_coordinates.append(coordinate_list)
-                gaps.append(find_gaps(coordinate_list))                
+            # Create and start the worker thread to run the algorithm in parallell with the GUI's main thread
+            self.worker = AlignmentWorker(seq1, seq2, gap_penalties, scoring_method)
+            self.worker.result_ready.connect(self.on_results_ready)
+            self.worker.error_occurred.connect(self.on_error)
+            self.worker.finished.connect(lambda: self.view.loading_cursor(False))
+            self.worker.start()
+            
+            # value_matrices = []
+            # arrow_matrices = []
+            # alignment_coordinates = []
+            # gaps = []
 
-            self.view.set_gaps(gaps)
-            self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
-            self.view.loading_cursor(False)
+            # self.view.loading_cursor(True)
+            # for penalty in gap_penalties:
+            #     val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty, scoring_method=="BLOSUM62")
+            #     coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix, val_matrix)
+
+            #     value_matrices.append(val_matrix)
+            #     arrow_matrices.append(arrow_matrix)
+            #     alignment_coordinates.append(coordinate_list)
+            #     gaps.append(find_gaps(coordinate_list))                
+
+            # self.view.set_gaps(gaps)
+            # self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
+            # self.view.loading_cursor(False)
 
         except Exception as e:
             print(e)
             self.view.popup_dialog(f"An unexpected error occurred. Try restarting the application.", "error")
+    
+    def on_results_ready(self, value_matrices, arrow_matrices, alignment_coordinates, gaps):
+        """Handle results from the worker thread."""
+        self.view.set_gaps(gaps)
+        self.view.display_matrices(value_matrices, arrow_matrices, (self.worker.seq1, self.worker.seq2), alignment_coordinates, self.worker.gap_penalties)
+        self.view.loading_cursor(False)
+
+    def on_error(self, error_message):
+        """Handle errors from the worker thread."""
+        raise Exception(f"An error occured during the algorithm execution: {error_message}")
 
     def parse_input(self, input1, input2):
         """

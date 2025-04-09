@@ -2,9 +2,10 @@ import blosum as bl
 import numpy as np
 
 
-def needleman_wunsch(s1, s2, gap_penalty, use_blosum):
+def construct_alignment_matrix(s1, s2, gap_penalty, use_blosum):
     """
-    Implement the Needleman-Wunsch algorithm for global alignment.
+    Constructs the alignment matrix according to the Needleman-Wunsch algorithm
+    for global alignment.
 
     Args:
         s1 (str): sequence 1
