@@ -31,13 +31,16 @@ def construct_alignment_matrix(s1, s2, gap_penalty, use_blosum):
 
     for row_idx in range(1, value_matrix.shape[0]):
         for col_idx in range(1, value_matrix.shape[1]):
-            is_match = s1[row_idx - 1] == s2[col_idx - 1]
+            s1_char = s1[row_idx - 1]
+            s2_char = s2[col_idx - 1]
+
+            is_match = s1_char == s2_char
 
             top_val = value_matrix[row_idx - 1, col_idx] + gap_penalty
             left_val = value_matrix[row_idx, col_idx - 1] + gap_penalty
 
             if use_blosum:
-                diag_val = value_matrix[row_idx - 1, col_idx - 1] + blosum_matrix[s1[row_idx - 1]][s2[col_idx - 1]]
+                diag_val = value_matrix[row_idx - 1, col_idx - 1] + blosum_matrix[s1_char][s2_char]
             else:
                 diag_val = value_matrix[row_idx - 1, col_idx - 1] + (match_score if is_match else mismatch_score)
 
