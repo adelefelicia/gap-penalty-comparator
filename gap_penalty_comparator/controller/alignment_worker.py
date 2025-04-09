@@ -1,5 +1,5 @@
 from model.needleman_wunsch import (backtrack_global_alignment, find_gaps,
-                              construct_alignment_matrix)
+                              value_propagation)
 from PyQt6.QtCore import QThread, pyqtSignal
 
 
@@ -22,7 +22,7 @@ class AlignmentWorker(QThread):
             gaps = []
 
             for penalty in self.gap_penalties:
-                val_matrix, arrow_matrix = construct_alignment_matrix(self.seq1, self.seq2, penalty, self.scoring_method == "BLOSUM62")
+                val_matrix, arrow_matrix = value_propagation(self.seq1, self.seq2, penalty, self.scoring_method == "BLOSUM62")
                 coordinate_list = backtrack_global_alignment(self.seq1, self.seq2, arrow_matrix, val_matrix)
 
                 value_matrices.append(val_matrix)

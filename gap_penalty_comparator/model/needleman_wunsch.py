@@ -2,7 +2,7 @@ import blosum as bl
 import numpy as np
 
 
-def construct_alignment_matrix(s1, s2, gap_penalty, use_blosum):
+def value_propagation(s1, s2, gap_penalty, use_blosum):
     """
     Constructs the alignment matrix according to the Needleman-Wunsch algorithm
     for global alignment.
