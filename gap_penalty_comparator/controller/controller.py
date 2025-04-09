@@ -24,14 +24,9 @@ class Controller:
                 self.view.popup_dialog("Please enter both sequences.", "warning")
                 return
             
-            if scoring_method == "BLOSUM62":
-                if not self.validate_blosum_input(seq1, seq2):
-                    self.view.popup_dialog("Invalid characters in sequences. Only amino acids are allowed.", "warning")
-                    return
-            elif scoring_method == "Identity":
-                if not seq1.isalpha() and seq2.isalpha():
-                    self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
-                    return
+            if not self.validate_seq_input(seq1, seq2):
+                self.view.popup_dialog("One or both sequences contain invalid characters. Only letters representing amino acids and nucleotides are allowed.", "warning")
+                return
 
             if len(seq1) > 30 or len(seq2) > 30:
                 self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read.", "info")
@@ -75,10 +70,10 @@ class Controller:
 
         return input1, input2
 
-    def validate_blosum_input(self, input1, input2):
+    def validate_seq_input(self, input1, input2):
         """
         Validate the input sequences to ensure they only contain valid
-        amino acid characters.
+        amino acid / nucleotide characters.
         """
         valid_chars = set("ARNDCQEGHILKMFPSTWYVBZX")
         if set(input1).issubset(valid_chars) and set(input2).issubset(valid_chars):
