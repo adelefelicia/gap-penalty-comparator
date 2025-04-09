@@ -2,14 +2,14 @@ import blosum as bl
 import numpy as np
 
 
-def value_propagation(s1, s2, gap_penalty, use_blosum):
+def value_propagation(seq1, seq2, gap_penalty, use_blosum):
     """
     Constructs the alignment matrix according to the Needleman-Wunsch algorithm
     for global alignment.
 
     Args:
-        s1 (str): sequence 1
-        s2 (str): sequence 2
+        seq1 (str): sequence 1
+        seq2 (str): sequence 2
         gap_penalty (int): penalty for gaps
         use_blosum (bool): whether to use BLOSUM62 matrix for scoring (True), or
                             match/mismatch scoring of 1/-1 (False)
@@ -23,24 +23,24 @@ def value_propagation(s1, s2, gap_penalty, use_blosum):
     match_score = 1
     mismatch_score = -1
 
-    value_matrix = initialize_value_matrix(s1, s2, gap_penalty)
-    arrow_matrix = initialize_arrow_matrix(s1, s2)
+    value_matrix = initialize_value_matrix(seq1, seq2, gap_penalty)
+    arrow_matrix = initialize_arrow_matrix(seq1, seq2)
 
     if use_blosum:
         blosum_matrix = bl.BLOSUM(62)
 
     for row in range(1, value_matrix.shape[0]):
         for col in range(1, value_matrix.shape[1]):
-            s1_char = s1[row - 1]
-            s2_char = s2[col - 1]
+            seq1_char = seq1[row - 1]
+            seq2_char = seq2[col - 1]
 
-            is_match = s1_char == s2_char
+            is_match = seq1_char == seq2_char
 
             top_val = value_matrix[row - 1, col] + gap_penalty
             left_val = value_matrix[row, col - 1] + gap_penalty
 
             if use_blosum:
-                diag_val = value_matrix[row - 1, col - 1] + blosum_matrix[s1_char][s2_char]
+                diag_val = value_matrix[row - 1, col - 1] + blosum_matrix[seq1_char][seq2_char]
             else:
                 diag_val = value_matrix[row - 1, col - 1] + (match_score if is_match else mismatch_score)
 
@@ -64,12 +64,12 @@ def value_to_arrows(top_val, left_val, diag_val):
     
     return np.array(arrows)
 
-def initialize_arrow_matrix(s1, s2):
+def initialize_arrow_matrix(seq1, seq2):
     """
     Initialize the arrow matrix with the correct dimensions and values.
     No arrows for position (0,0), [3] for the first row, and [2] for the first column.
     """
-    matrix = np.zeros((len(s1) + 1, len(s2) + 1), dtype=object)
+    matrix = np.zeros((len(seq1) + 1, len(seq2) + 1), dtype=object)
     for col in range(1, matrix.shape[1]):
         matrix[0, col] = [3]
     for row in range(1, matrix.shape[0]):
@@ -78,25 +78,25 @@ def initialize_arrow_matrix(s1, s2):
     matrix[0, 0] = []
     return matrix
 
-def initialize_value_matrix(s1, s2, gap_penalty):
+def initialize_value_matrix(seq1, seq2, gap_penalty):
     """
     Initialize the matrix with the correct dimensions and values.
     0 for position (0,0), and gap penalties incrementally for the
     first row and column.
     """
-    matrix = np.zeros((len(s1) + 1, len(s2) + 1))
+    matrix = np.zeros((len(seq1) + 1, len(seq2) + 1))
 
     if gap_penalty != 0:
-        matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
-        matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
+        matrix[0, :] = np.arange(0, (len(seq2) + 1) * gap_penalty, gap_penalty)
+        matrix[:, 0] = np.arange(0, (len(seq1) + 1) * gap_penalty, gap_penalty)
 
     return matrix
 
-def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
+def backtrack_global_alignment(s1, seq2, arrow_matrix, value_matrix):
     coordinates = []
 
     row = len(s1)
-    col = len(s2)
+    col = len(seq2)
     coordinates.append((row, col))
 
     while not (row == 0 and col == 0):
