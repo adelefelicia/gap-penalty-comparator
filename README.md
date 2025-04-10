@@ -20,7 +20,7 @@ The project was made for the course "MOL3022 Bioinformatics - Method Oriented Pr
 ## Getting started
 
 ### System requirements
-The app has only been tested on computers with Windows 11 operating system. It requires Python version 3.11 or higher. Other dependencies can be installed as explained below.
+The app has only been tested on computers with Windows 11 and MacOS Sequoia 15.3.2 operating systems. It requires Python version 3.11 or higher. Other dependencies can be installed as explained below.
 
 ### Installation
 1. Clone the repository:

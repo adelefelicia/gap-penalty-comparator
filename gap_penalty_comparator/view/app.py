@@ -111,9 +111,9 @@ class MainWindow(QScrollArea):
         self.matrices_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.matrices_frame.setVisible(False)
 
-        edit_alignment_btn = Button(250, 50, "Edit alignments/penalties", self, font_size=12)
-        edit_alignment_btn.clicked.connect(self.show_main_view)
-        self.matrices_layout.addWidget(edit_alignment_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        edit_seqs_btn = Button(250, 50, "Edit sequences/penalties", self, font_size=12)
+        edit_seqs_btn.clicked.connect(self.show_main_view)
+        self.matrices_layout.addWidget(edit_seqs_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.main_layout.addWidget(self.input_frame, stretch=1)  # Stretch keeps title from moving between views
         self.main_layout.addWidget(self.matrices_frame, stretch=1) # Stretch keeps title from moving between views
