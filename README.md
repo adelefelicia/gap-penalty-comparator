@@ -15,7 +15,7 @@ The project was made for the course "MOL3022 Bioinformatics - Method Oriented Pr
   - BLOSUM62 matrix for protein alignments.
   - Identity scoring for protein and gene alignments.
 - **Interactive Visualization**: Displays alignment matrices with alignment scores and arrows showing backtracking logic, as well as highlighted alignment paths.
-- **Gap information**: Shows the number of gaps and average length of gaps for each gap penalty.
+- **Gap statistics**: Shows the number of gaps and average length of gaps for each gap penalty.
 
 ## Getting started
 
@@ -38,7 +38,7 @@ The app has only been tested on computers with Windows 11 operating system. It r
 ### Running the app
 1. Navigate to the project's inner directory:
    ```bash
-   cd gap-penalty-comparator
+   cd gap_penalty_comparator
    ```
 2. Run the main.py file to start the app:
    ```bash

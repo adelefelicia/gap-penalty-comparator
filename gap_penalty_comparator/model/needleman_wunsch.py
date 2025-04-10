@@ -2,13 +2,14 @@ import blosum as bl
 import numpy as np
 
 
-def needleman_wunsch(s1, s2, gap_penalty, use_blosum):
+def value_propagation(seq1, seq2, gap_penalty, use_blosum):
     """
-    Implement the Needleman-Wunsch algorithm for global alignment.
+    Constructs the alignment matrix according to the Needleman-Wunsch algorithm
+    for global alignment.
 
     Args:
-        s1 (str): sequence 1
-        s2 (str): sequence 2
+        seq1 (str): sequence 1
+        seq2 (str): sequence 2
         gap_penalty (int): penalty for gaps
         use_blosum (bool): whether to use BLOSUM62 matrix for scoring (True), or
                             match/mismatch scoring of 1/-1 (False)
@@ -22,26 +23,29 @@ def needleman_wunsch(s1, s2, gap_penalty, use_blosum):
     match_score = 1
     mismatch_score = -1
 
-    value_matrix = initialize_value_matrix(s1, s2, gap_penalty)
-    arrow_matrix = initialize_arrow_matrix(s1, s2)
+    value_matrix = initialize_value_matrix(seq1, seq2, gap_penalty)
+    arrow_matrix = initialize_arrow_matrix(seq1, seq2)
 
     if use_blosum:
         blosum_matrix = bl.BLOSUM(62)
 
-    for row_idx in range(1, value_matrix.shape[0]):
-        for col_idx in range(1, value_matrix.shape[1]):
-            is_match = s1[row_idx - 1] == s2[col_idx - 1]
+    for row in range(1, value_matrix.shape[0]):
+        for col in range(1, value_matrix.shape[1]):
+            seq1_char = seq1[row - 1]
+            seq2_char = seq2[col - 1]
 
-            top_val = value_matrix[row_idx - 1, col_idx] + gap_penalty
-            left_val = value_matrix[row_idx, col_idx - 1] + gap_penalty
+            is_match = seq1_char == seq2_char
+
+            top_val = value_matrix[row - 1, col] + gap_penalty
+            left_val = value_matrix[row, col - 1] + gap_penalty
 
             if use_blosum:
-                diag_val = value_matrix[row_idx - 1, col_idx - 1] + blosum_matrix[s1[row_idx - 1]][s2[col_idx - 1]]
+                diag_val = value_matrix[row - 1, col - 1] + blosum_matrix[seq1_char][seq2_char]
             else:
-                diag_val = value_matrix[row_idx - 1, col_idx - 1] + (match_score if is_match else mismatch_score)
+                diag_val = value_matrix[row - 1, col - 1] + (match_score if is_match else mismatch_score)
 
-            value_matrix[row_idx, col_idx] = max(top_val, left_val, diag_val)
-            arrow_matrix[row_idx, col_idx] = value_to_arrows(top_val, left_val, diag_val)
+            value_matrix[row, col] = max(top_val, left_val, diag_val)
+            arrow_matrix[row, col] = value_to_arrows(top_val, left_val, diag_val)
 
     return value_matrix, arrow_matrix
 
@@ -60,12 +64,12 @@ def value_to_arrows(top_val, left_val, diag_val):
     
     return np.array(arrows)
 
-def initialize_arrow_matrix(s1, s2):
+def initialize_arrow_matrix(seq1, seq2):
     """
     Initialize the arrow matrix with the correct dimensions and values.
     No arrows for position (0,0), [3] for the first row, and [2] for the first column.
     """
-    matrix = np.zeros((len(s1) + 1, len(s2) + 1), dtype=object)
+    matrix = np.zeros((len(seq1) + 1, len(seq2) + 1), dtype=object)
     for col in range(1, matrix.shape[1]):
         matrix[0, col] = [3]
     for row in range(1, matrix.shape[0]):
@@ -74,53 +78,53 @@ def initialize_arrow_matrix(s1, s2):
     matrix[0, 0] = []
     return matrix
 
-def initialize_value_matrix(s1, s2, gap_penalty):
+def initialize_value_matrix(seq1, seq2, gap_penalty):
     """
     Initialize the matrix with the correct dimensions and values.
     0 for position (0,0), and gap penalties incrementally for the
     first row and column.
     """
-    matrix = np.zeros((len(s1) + 1, len(s2) + 1))
+    matrix = np.zeros((len(seq1) + 1, len(seq2) + 1))
 
     if gap_penalty != 0:
-        matrix[0, :] = np.arange(0, (len(s2) + 1) * gap_penalty, gap_penalty)
-        matrix[:, 0] = np.arange(0, (len(s1) + 1) * gap_penalty, gap_penalty)
+        matrix[0, :] = np.arange(0, (len(seq2) + 1) * gap_penalty, gap_penalty)
+        matrix[:, 0] = np.arange(0, (len(seq1) + 1) * gap_penalty, gap_penalty)
 
     return matrix
 
-def backtrack_global_alignment(s1, s2, arrow_matrix, value_matrix):
+def backtrack_global_alignment(s1, seq2, arrow_matrix, value_matrix):
     coordinates = []
 
-    row_idx = len(s1)
-    col_idx = len(s2)
-    coordinates.append((row_idx, col_idx))
+    row = len(s1)
+    col = len(seq2)
+    coordinates.append((row, col))
 
-    while not (row_idx == 0 and col_idx == 0):
-        prev_cell_arrows = arrow_matrix[row_idx, col_idx]
+    while not (row == 0 and col == 0):
+        prev_cell_arrows = arrow_matrix[row, col]
 
         if len(prev_cell_arrows) > 1:
             # If there are multiple arrows, choose the one leading to the highest value
-            top_val = value_matrix[row_idx - 1, col_idx]
-            left_val = value_matrix[row_idx, col_idx - 1]
-            diag_val = value_matrix[row_idx - 1, col_idx - 1]
+            top_val = value_matrix[row - 1, col]
+            left_val = value_matrix[row, col - 1]
+            diag_val = value_matrix[row - 1, col - 1]
             
             if 1 in prev_cell_arrows and diag_val >= top_val and diag_val >= left_val:
-                row_idx -= 1
-                col_idx -= 1
+                row -= 1
+                col -= 1
             elif 2 in prev_cell_arrows and top_val >= diag_val and top_val >= left_val:
-                row_idx -= 1
+                row -= 1
             elif 3 in prev_cell_arrows and left_val >= diag_val and left_val >= top_val:
-                col_idx -= 1
+                col -= 1
 
         elif 1 in prev_cell_arrows:
-            row_idx -= 1
-            col_idx -= 1
+            row -= 1
+            col -= 1
         elif 2 in prev_cell_arrows:
-            row_idx -= 1
+            row -= 1
         elif 3 in prev_cell_arrows:
-            col_idx -= 1
+            col -= 1
 
-        coordinates.append((row_idx, col_idx))
+        coordinates.append((row, col))
 
     return coordinates
 
@@ -133,12 +137,12 @@ def find_gaps(coordinates):
     gaps = []
     prev_gap = {"count": 0, "seq": 0}
     for i in range(len(coordinates) - 1):
-        row_idx, col_idx = coordinates[i]
-        next_row_idx, next_col_idx = coordinates[i + 1]
-        same_row = row_idx == next_row_idx
-        same_col = col_idx == next_col_idx
+        row, col = coordinates[i]
+        next_row, next_col = coordinates[i + 1]
+        same_row = row == next_row
+        same_col = col == next_col
 
-        if (same_row and col_idx != next_col_idx) or (same_col and row_idx != next_row_idx):
+        if (same_row and col != next_col) or (same_col and row != next_row):
             # Check if the gap is extending the previous one, or start a new one
             prev_gap = extends_prev_gap(prev_gap, same_row, same_col, gaps)
 

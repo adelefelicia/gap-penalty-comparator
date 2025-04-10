@@ -1,9 +1,9 @@
 import sys
 
-from model.comparator import (backtrack_global_alignment, find_gaps,
-                              needleman_wunsch)
 from PyQt6.QtWidgets import QApplication, QPushButton
 from view.app import MainWindow
+
+from .alignment_worker import AlignmentWorker
 
 
 class Controller:
@@ -24,47 +24,41 @@ class Controller:
                 self.view.popup_dialog("Please enter both sequences.", "warning")
                 return
             
-            if scoring_method == "BLOSUM62":
-                if not self.validate_blosum_input(seq1, seq2):
-                    self.view.popup_dialog("Invalid characters in sequences. Only amino acids are allowed.", "warning")
-                    return
-            elif scoring_method == "Identity":
-                if not seq1.isalpha() and seq2.isalpha():
-                    self.view.popup_dialog("One or both sequences contain invalid characters. Only letters are allowed.", "warning")
-                    return
+            if not self.validate_seq_input(seq1, seq2):
+                self.view.popup_dialog("One or both sequences contain invalid characters. Only letters representing amino acids and nucleotides are allowed.", "warning")
+                return
 
             if len(seq1) > 30 or len(seq2) > 30:
-                self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read.", "info")
-                return
+                self.view.popup_dialog("Matrices for sequences over 30 characters may be hard to read and may take longer to align. The calculations will proceed regardless.", "info")
 
             gap_penalties = self.view.get_gap_penalties()
 
             if len(gap_penalties) < 3:
                 self.view.popup_dialog("Please enter three gap penalties to compare.", "warning")
                 return
-            
-            value_matrices = []
-            arrow_matrices = []
-            alignment_coordinates = []
-            gaps = []
 
             self.view.loading_cursor(True)
-            for penalty in gap_penalties:
-                val_matrix, arrow_matrix = needleman_wunsch(seq1, seq2, penalty, scoring_method=="BLOSUM62")
-                coordinate_list = backtrack_global_alignment(seq1, seq2, arrow_matrix, val_matrix)
 
-                value_matrices.append(val_matrix)
-                arrow_matrices.append(arrow_matrix)
-                alignment_coordinates.append(coordinate_list)
-                gaps.append(find_gaps(coordinate_list))                
-
-            self.view.set_gaps(gaps)
-            self.view.display_matrices(value_matrices, arrow_matrices, (seq1, seq2), alignment_coordinates, gap_penalties)
-            self.view.loading_cursor(False)
+            # Create and start the worker thread to run the algorithm in parallell with the GUI's main thread
+            self.worker = AlignmentWorker(seq1, seq2, gap_penalties, scoring_method)
+            self.worker.result_ready.connect(self.on_results_ready)
+            self.worker.error_occurred.connect(self.on_error)
+            self.worker.finished.connect(lambda: self.view.loading_cursor(False))
+            self.worker.start()
 
         except Exception as e:
             print(e)
             self.view.popup_dialog(f"An unexpected error occurred. Try restarting the application.", "error")
+    
+    def on_results_ready(self, value_matrices, arrow_matrices, alignment_coordinates, gaps):
+        """Handle results from the worker thread."""
+        self.view.set_gaps(gaps)
+        self.view.display_matrices(value_matrices, arrow_matrices, (self.worker.seq1, self.worker.seq2), alignment_coordinates, self.worker.gap_penalties)
+        self.view.loading_cursor(False)
+
+    def on_error(self, error_message):
+        """Handle errors from the worker thread."""
+        raise Exception(f"An error occured during the algorithm execution: {error_message}")
 
     def parse_input(self, input1, input2):
         """
@@ -76,10 +70,10 @@ class Controller:
 
         return input1, input2
 
-    def validate_blosum_input(self, input1, input2):
+    def validate_seq_input(self, input1, input2):
         """
         Validate the input sequences to ensure they only contain valid
-        amino acid characters.
+        amino acid / nucleotide characters.
         """
         valid_chars = set("ARNDCQEGHILKMFPSTWYVBZX")
         if set(input1).issubset(valid_chars) and set(input2).issubset(valid_chars):
