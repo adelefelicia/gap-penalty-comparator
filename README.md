@@ -14,7 +14,7 @@ The project was made for the course "MOL3022 Bioinformatics - Method Oriented Pr
 - **Scoring Methods**:
   - BLOSUM62 matrix for protein alignments.
   - Identity scoring for protein and gene alignments.
-- **Interactive Visualization**: Displays alignment matrices with alignment scores and arrows showing backtracking logic, as well as highlighted alignment paths.
+- **Alignment Matrix Visualization**: Displays alignment matrices with alignment scores and arrows showing backtracking logic, as well as highlighted alignment paths.
 - **Gap statistics**: Shows the number of gaps and average length of gaps for each gap penalty.
 
 ## Getting started
