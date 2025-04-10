@@ -1,5 +1,5 @@
 from model.needleman_wunsch import (backtrack_global_alignment, find_gaps,
-                              value_propagation)
+                                    value_propagation)
 from PyQt6.QtCore import QThread, pyqtSignal
 
 
